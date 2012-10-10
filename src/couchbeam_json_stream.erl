@@ -396,16 +396,22 @@ err(Error)->
 
 make_ejson([], Stack) ->
     Stack;
+
 make_ejson([array_start | RevEvs], [ArrayValues, PrevValues | RestStack]) ->
     make_ejson(RevEvs, [[ArrayValues | PrevValues] | RestStack]);
+
 make_ejson([array_end | RevEvs], Stack) ->
     make_ejson(RevEvs, [[] | Stack]);
+
 make_ejson([object_start | RevEvs], [ObjValues, PrevValues | RestStack]) ->
-    make_ejson(RevEvs, [[{ObjValues} | PrevValues] | RestStack]);
+    make_ejson(RevEvs, [[ObjValues | PrevValues] | RestStack]);
+
 make_ejson([object_end | RevEvs], Stack) ->
     make_ejson(RevEvs, [[] | Stack]);
+
 make_ejson([{key, String} | RevEvs], [[PrevValue|RestObject] | RestStack] = _Stack) ->
     make_ejson(RevEvs, [[{String, PrevValue}|RestObject] | RestStack]);
+
 make_ejson([Value | RevEvs], [Vals | RestStack] = _Stack) ->
     make_ejson(RevEvs, [[Value | Vals] | RestStack]).
 

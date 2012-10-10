@@ -79,11 +79,11 @@ stream(Db, ClientPid, Options) when is_pid(ClientPid) ->
         ({error, Error}) ->
             LastSeq = get(last_seq),
             ClientPid ! {error, StartRef, LastSeq, Error};
-        ({[{<<"last_seq">>, _}]}) ->
+        ([{<<"last_seq">>, _}]) ->
             ok;
         (Row) ->
             ClientPid ! {change, StartRef, Row},
-            Seq = couchbeam_doc:get_value(<<"seq">>, Row),
+            Seq = jsx:get_value(<<"seq">>, Row),
             put(last_seq, Seq)
     end,
     do_stream(Db, UserFun, Options, StartRef);
@@ -96,11 +96,11 @@ stream(Db, Fun, Options) ->
         ({error, Error}) ->
             LastSeq = get(last_seq),
             Fun({error, LastSeq, Error});
-        ({[{<<"last_seq">>, _}]}) ->
+        ([{<<"last_seq">>, _}]) ->
             ok;
         (Row) ->
             Fun({change, Row}),
-            Seq = couchbeam_doc:get_value(<<"seq">>, Row),
+            Seq = jsx:get_value(<<"seq">>, Row),
             put(last_seq, Seq)
     end,
     do_stream(Db, UserFun, Options).

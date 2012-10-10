@@ -131,7 +131,7 @@ handle_info({change, Ref, Msg},
         {done, LastSeq} ->
             State#gen_changes_state{last_seq=LastSeq};
         Row ->
-            Seq = couchbeam_doc:get_value(<<"seq">>, Row),
+            Seq = jsx:get_value(<<"seq">>, Row),
             State#gen_changes_state{last_seq=Seq}
     end,
 

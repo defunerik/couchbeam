@@ -81,23 +81,22 @@ add_inline(Doc, Content, AName) ->
 %%      AName::string(), ContentType::string()) -> json_obj()
 %% @doc add attachment  to a doc and encode it with ContentType fixed.
 add_inline(Doc, Content, AName, ContentType) ->
-    {Props} = Doc,
     Data = base64:encode(Content),
-    Attachment = {couchbeam_util:to_binary(AName), {[{<<"content_type">>,
-        couchbeam_util:to_binary(ContentType)}, {<<"data">>, Data}]}},
-
-    Attachments1 = case proplists:get_value(<<"_attachments">>, Props) of
-        undefined ->
-            [Attachment];
-        {Attachments} ->
-            case set_attachment(Attachments, [], Attachment) of
-                notfound ->
-                    [Attachment|Attachments];
-                A ->
-                    A
-                end
-        end,
-    couchbeam_doc:set_value(<<"_attachments">>, {Attachments1}, Doc).
+    Attachment = {couchbeam_util:to_binary(AName), [{<<"content_type">>,
+						     couchbeam_util:to_binary(ContentType)}, {<<"data">>, Data}]},
+    
+    Attachments1 = case jsx:get_value(<<"_attachments">>, Doc) of
+		       undefined ->
+			   [Attachment];
+		       Attachments ->
+			   case set_attachment(Attachments, [], Attachment) of
+			       notfound ->
+				   [Attachment|Attachments];
+			       A ->
+				   A
+			   end
+		   end,
+    jsx:set_value(<<"_attachments">>, Attachments1, Doc).
 
 %% @spec delete_inline(Doc::json_obj(), AName::string()) -> json_obj()
 %% @doc delete an attachment record in doc. This is different from delete_attachment
@@ -105,17 +104,16 @@ add_inline(Doc, Content, AName, ContentType) ->
 delete_inline(Doc, AName) when is_list(AName) ->
     delete_inline(Doc, list_to_binary(AName));
 delete_inline(Doc, AName) when is_binary(AName) ->
-    {Props} = Doc,
-    case proplists:get_value(<<"_attachments">>, Props) of
+    case jsx:get_value(<<"_attachments">>, Doc) of
         undefined ->
             Doc;
-        {Attachments} ->
+        Attachments ->
             case proplists:get_value(AName, Attachments) of
                 undefined ->
                     Doc;
                 _ ->
                     Attachments1 = proplists:delete(AName, Attachments),
-                    couchbeam_doc:set_value(<<"_attachments">>, {Attachments1}, Doc)
+                    jsx:set_value(<<"_attachments">>, Attachments1, Doc)
                 end
         end.
 

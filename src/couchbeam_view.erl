@@ -165,7 +165,7 @@ stream(#db{options=IbrowseOpts}=Db, ViewName, ClientPid, Options) ->
             get ->
                 couchbeam_httpc:request_stream({ViewPid, once}, get, Url, IbrowseOpts);
             post ->
-                Body = couchbeam_ejson:encode({[{<<"keys">>, Args#view_query_args.keys}]}),
+                Body = couchbeam_ejson:encode([{<<"keys">>, Args#view_query_args.keys}]),
                 Headers = [{"Content-Type", "application/json"}],
                 couchbeam_httpc:request_stream({ViewPid, once}, post, Url,
                     IbrowseOpts, Headers, Body)
@@ -201,21 +201,21 @@ count(#db{options=IbrowseOpts}=Db, ViewName, Options)->
             get ->
                 couchbeam_httpc:request(get, Url, ["200"], IbrowseOpts);
             post ->
-                Body = couchbeam_ejson:encode({[{<<"keys">>, Args#view_query_args.keys}]}),
+                Body = couchbeam_ejson:encode([{<<"keys">>, Args#view_query_args.keys}]),
                 Headers = [{"Content-Type", "application/json"}],
                 couchbeam_httpc:request_stream(post, Url, ["200"],
                     IbrowseOpts, Headers, Body)
         end,
         case Result of
             {ok, _, _, RespBody} ->
-                {Props} = couchbeam_ejson:decode(RespBody),
+                Props = couchbeam_ejson:decode(RespBody),
                 case proplists:get_value("limit",
-                        Args#view_query_args.options, 0) of
-                0 ->
-                    proplists:get_value(<<"total_rows">>, Props);
-                _ ->
-                    Rows = proplists:get_value(<<"rows">>, Props),
-                    length(Rows)
+					 Args#view_query_args.options, 0) of
+		    0 ->
+			jsx:get_value(<<"total_rows">>, Props);
+		    _ ->
+			Rows = jsx:get_value(<<"rows">>, Props),
+			length(Rows)
                 end;
             Error ->
                 Error
@@ -542,7 +542,7 @@ do_redirect(Headers, UserFun, Callback, {Args, Url, IbrowseOpts}) ->
         get ->
             couchbeam_httpc:request_stream({self(), once}, get, RedirectUrl, IbrowseOpts);
         post ->
-            Body = couchbeam_ejson:encode({[{<<"keys">>, Args#view_query_args.keys}]}),
+            Body = couchbeam_ejson:encode([{<<"keys">>, Args#view_query_args.keys}]),
             Headers = [{"Content-Type", "application/json"}],
             couchbeam_httpc:request_stream({self(), once}, get, RedirectUrl,
                 IbrowseOpts, Headers, Body)
@@ -569,11 +569,11 @@ view_ev3(array_start, UserFun) ->
 
 view_ev_loop(object_start, UserFun) ->
     fun(Ev) ->
-        couchbeam_json_stream:collect_object(Ev,
-            fun(Obj) ->
-                UserFun(Obj),
-                fun(Ev2) -> view_ev_loop(Ev2, UserFun) end
-            end)
+	    couchbeam_json_stream:collect_object(Ev,
+						 fun(Obj) ->
+							 UserFun(Obj),
+							 fun(Ev2) -> view_ev_loop(Ev2, UserFun) end
+						 end)
     end;
 view_ev_loop(array_end, UserFun) ->
     UserFun(done),
