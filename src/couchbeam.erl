@@ -775,13 +775,13 @@ compact(#db{server=Server, options=IbrowseOpts}=Db, DesignName) ->
 %% --------------------------------------------------------------------
 
 %% add missing docid to a list of documents if needed
-maybe_docid(Server, {DocProps}) ->
+maybe_docid(Server, DocProps) ->
     case couchbeam_util:get_value(<<"_id">>, DocProps) of
         undefined ->
             DocId = [get_uuid(Server)],
             [{<<"_id">>, list_to_binary(DocId)}|DocProps];
         _DocId ->
-            {DocProps}
+            DocProps
     end.
 
 %% @doc Asemble the server URL for the given client
